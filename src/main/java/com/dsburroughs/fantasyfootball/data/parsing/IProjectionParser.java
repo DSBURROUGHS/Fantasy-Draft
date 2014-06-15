@@ -18,5 +18,4 @@ public interface IProjectionParser {
 	public List<Player> getKickerList() throws IOException, FormatChangeException;
 
 	public List<Player> getDefenseList() throws IOException, FormatChangeException;
-
 }
