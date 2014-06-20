@@ -3,7 +3,6 @@ package com.dsburroughs.fantasyfootball.data.parsing;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +15,7 @@ import au.com.bytecode.opencsv.CSVReader;
 import au.com.bytecode.opencsv.CSVWriter;
 
 import com.dsburroughs.fantasyfootball.players.Player;
+import com.dsburroughs.fantasyfootball.players.Position;
 
 public class FantasyProsProjectionParser implements IProjectionParser {
 
@@ -55,7 +55,6 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 
 			writer.writeNext(tempPlayerArray);
 			csvPlayers.add(sw.toString());
-			System.out.println(sw.toString());
 			// clears stringwriter contents for reuse
 			sw.getBuffer().setLength(0);
 		}
@@ -67,6 +66,8 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 
 	public List<Player> getQuarterbackList() throws IOException, FormatChangeException {
 
+		
+		List<Player> playerList = new ArrayList<>();
 		List<String> csvPlayers = parseToCSV(QB_PROJECTION_LINK);
 		CSVReader reader = null;
 
@@ -76,19 +77,40 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 			reader = new CSVReader(new StringReader(currentPlayer));
 			String[] playerValues = reader.readNext();
 			// hand mapped values from csv
-			if (playerValues.length != 11)
+			if (playerValues.length != 11) {
+				reader.close();
 				throw new FormatChangeException("");
-			tempPlayer.setName(playerValues[0]);
-			tempPlayer.setPassingAttempts(Double.parseDouble(playerValues[0]));
-			tempPlayer.setPassingCompletions(Double.parseDouble(playerValues[0]));
-			tempPlayer.setPassingYards(Double.parseDouble(playerValues[0]));
-			tempPlayer.setPassingTouchdowns(Double.parseDouble(playerValues[0]));
-			tempPlayer.setPassingAttempts(Double.parseDouble(playerValues[0]));
+			}
+
+			String[] nameSplit = playerValues[0].trim().split(" ");
+			StringBuilder name = new StringBuilder();
+
+			for (int i = 0; i < nameSplit.length - 1; i++) {
+				name.append(nameSplit[i] + " ");
+			}
+
+
+			tempPlayer.setName(name.toString().trim());
+			// tempPlayer.setTeam(Team.valueOf(nameSplit[nameSplit.length]));
+			tempPlayer.setPassingAttempts(Double.parseDouble(playerValues[1].replace(",", "")));
+			tempPlayer.setPassingCompletions(Double.parseDouble(playerValues[2].replace(",", "")));
+			tempPlayer.setPassingYards(Double.parseDouble(playerValues[3].replace(",", "")));
+			tempPlayer.setPassingTouchdowns(Double.parseDouble(playerValues[4].replace(",", "")));
+			tempPlayer.setInterceptions(Double.parseDouble(playerValues[5].replace(",", "")));
+
+			tempPlayer.setRushingAttempts(Double.parseDouble(playerValues[6].replace(",", "")));
+			tempPlayer.setRushingYards(Double.parseDouble(playerValues[7].replace(",", "")));
+			tempPlayer.setRushingTouchdowns(Double.parseDouble(playerValues[8].replace(",", "")));
+			tempPlayer.setFumbles(Double.parseDouble(playerValues[9].replace(",", "")));
+
+			tempPlayer.setPosition(Position.QB);
+			
+			playerList.add(tempPlayer);
 
 		}
 		reader.close();
 
-		return null;
+		return playerList;
 	}
 
 	public List<Player> geRunningbackList() throws IOException {

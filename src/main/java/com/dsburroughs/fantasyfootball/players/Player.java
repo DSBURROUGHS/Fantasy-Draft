@@ -22,10 +22,7 @@ public class Player {
 
 	private Health health;
 	private Position position;
-
-	public enum Position {
-		QB, RB, WR, TE, K, DEF
-	}
+	private Team team;
 
 	public String getName() {
 		return name;
@@ -145,6 +142,22 @@ public class Player {
 
 	public void setPosition(Position position) {
 		this.position = position;
+	}
+
+	public Team getTeam() {
+		return team;
+	}
+
+	public void setTeam(Team team) {
+		this.team = team;
+	}
+
+	@Override
+	public String toString() {
+		return "Player [name=" + name + ", passingAttempts=" + passingAttempts + ", passingCompletions=" + passingCompletions + ", passingYards=" + passingYards + ", passingTouchdowns="
+				+ passingTouchdowns + ", rushingYards=" + rushingYards + ", rushingAttempts=" + rushingAttempts + ", rushingTouchdowns=" + rushingTouchdowns + ", recievingYards=" + recievingYards
+				+ ", receptions=" + receptions + ", recievingTouchdown=" + recievingTouchdown + ", interceptions=" + interceptions + ", fumbles=" + fumbles + ", health=" + health + ", position="
+				+ position + ", team=" + team + "]";
 	}
 
 }
