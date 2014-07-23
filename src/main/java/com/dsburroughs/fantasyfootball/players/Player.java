@@ -3,6 +3,7 @@ package com.dsburroughs.fantasyfootball.players;
 public class Player {
 
 	private String name;
+	private String team;
 
 	private double passingAttempts;
 	private double passingCompletions;
@@ -147,4 +148,16 @@ public class Player {
 		this.position = position;
 	}
 
+	public String getTeam() {
+		return team;
+	}
+
+	public void setTeam(String team) {
+		this.team = team;
+	}
+
+	
+
+	
+	
 }

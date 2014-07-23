@@ -1,30 +1,32 @@
 package com.dsburroughs.fantasyfootball.data.parsing;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.io.StringWriter;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import java.util.Locale;
 
 import au.com.bytecode.opencsv.CSVReader;
-import au.com.bytecode.opencsv.CSVWriter;
 
 import com.dsburroughs.fantasyfootball.players.Player;
+import com.dsburroughs.fantasyfootball.players.Player.Position;
 
 public class FantasyProsProjectionParser implements IProjectionParser {
 
-	public final static String QB_PROJECTION_LINK = "http://www.fantasypros.com/nfl/projections/qb.php";
-	public final static String RB_PROJECTION_LINK = "http://www.fantasypros.com/nfl/projections/rb.php";
-	public final static String WR_PROJECTION_LINK = "http://www.fantasypros.com/nfl/projections/wr.php";
-	public final static String TE_PROJECTION_LINK = "http://www.fantasypros.com/nfl/projections/te.php";
-	public final static String K_PROJECTION_LINK = "http://www.fantasypros.com/nfl/projections/k.php";
-	public final static String DEF_PROJECTION_LINK = "";
+	private static final String QB_PROJECTION_LINK = "http://www.fantasypros.com/nfl/projections/qb.php?export=xls";
+	private static final String RB_PROJECTION_LINK = "http://www.fantasypros.com/nfl/projections/rb.php?export=xls";
+	private static final String WR_PROJECTION_LINK = "http://www.fantasypros.com/nfl/projections/wr.php?export=xls";
+	private static final String TE_PROJECTION_LINK = "http://www.fantasypros.com/nfl/projections/te.php?export=xls";
+	private static final String K_PROJECTION_LINK = "http://www.fantasypros.com/nfl/projections/k.php?export=xls";
+	private static final String DEF_PROJECTION_LINK = "";
+	private static final int LINES_TO_SKIP = 6;
 
 	private boolean writeToFile = false;
 
@@ -32,91 +34,178 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 
 	}
 
-	private List<String> parseToCSV(String projectionLink) throws IOException {
+	private List<String> retriveData(String projectionLink) throws IOException, URISyntaxException {
 
-		List<String> csvPlayers = new ArrayList<String>();
-		StringWriter sw = new StringWriter();
-		CSVWriter writer = new CSVWriter(sw);
+		List<String> playerData = new ArrayList<String>();
 
-		Document doc = Jsoup.connect(projectionLink).get();
-		Element tableHeader = doc.select("table").get(1);
-		Element element = tableHeader.children().get(1);
+		InputStream input = new URL(projectionLink).openStream();
 
-		for (Element players : element.getElementsByTag("tr")) {
-			Elements nodes = players.getElementsByTag("td");
-			int nodeCount = nodes.size();
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(input, "UTF-8"))) {
 
-			String[] tempPlayerArray = new String[nodeCount];
-			tempPlayerArray[0] = nodes.get(0).text();
+			// skips header information
+			for (int i = 0; i < LINES_TO_SKIP; i++)
+				br.readLine();
 
-			for (int i = 1; i < tempPlayerArray.length; i++) {
-				tempPlayerArray[i] = players.getElementsByTag("td").get(i).text();
+			for (String line; (line = br.readLine()) != null;) {
+				if (line != null) {
+					playerData.add(line);
+				}
 			}
-
-			writer.writeNext(tempPlayerArray);
-			csvPlayers.add(sw.toString());
-			System.out.println(sw.toString());
-			// clears stringwriter contents for reuse
-			sw.getBuffer().setLength(0);
 		}
-		sw.close();
-		writer.close();
 
-		return csvPlayers;
+		return playerData;
+
 	}
 
-	public List<Player> getQuarterbackList() throws IOException, FormatChangeException {
+	public List<Player> getQuarterbackList() throws ParseException, IOException, URISyntaxException {
+		List<String> csvPlayers = retriveData(QB_PROJECTION_LINK);
+		List<Player> players = new ArrayList<Player>();
 
-		List<String> csvPlayers = parseToCSV(QB_PROJECTION_LINK);
-		CSVReader reader = null;
+		for (String playerString : csvPlayers) {
+			String[] split = playerString.split("\t");
 
-		for (String currentPlayer : csvPlayers) {
-			Player tempPlayer = new Player();
+			if (split.length == 12) {
+				Player tempPlayer = new Player();
 
-			reader = new CSVReader(new StringReader(currentPlayer));
-			String[] playerValues = reader.readNext();
-			// hand mapped values from csv
-			if (playerValues.length != 11)
-				throw new FormatChangeException("");
-			tempPlayer.setName(playerValues[0]);
-			tempPlayer.setPassingAttempts(Double.parseDouble(playerValues[0]));
-			tempPlayer.setPassingCompletions(Double.parseDouble(playerValues[0]));
-			tempPlayer.setPassingYards(Double.parseDouble(playerValues[0]));
-			tempPlayer.setPassingTouchdowns(Double.parseDouble(playerValues[0]));
-			tempPlayer.setPassingAttempts(Double.parseDouble(playerValues[0]));
+				// hand mapped values
+				tempPlayer.setName(split[0]);
+				tempPlayer.setTeam(split[1]);
+				tempPlayer.setPassingAttempts(prepareDouble(split[2]));
+				tempPlayer.setPassingCompletions(prepareDouble(split[3]));
+				tempPlayer.setPassingYards(prepareDouble(split[4]));
+				tempPlayer.setPassingTouchdowns(prepareDouble(split[5]));
+				tempPlayer.setInterceptions(prepareDouble(split[6]));
+				tempPlayer.setRushingAttempts(prepareDouble(split[7]));
+				tempPlayer.setRushingYards(prepareDouble(split[8]));
+				tempPlayer.setRushingTouchdowns(prepareDouble(split[9]));
+				tempPlayer.setFumbles(prepareDouble(split[10]));
+				tempPlayer.setPosition(Position.QB);
 
+				players.add(tempPlayer);
+			}
 		}
-		reader.close();
 
-		return null;
+		return players;
 	}
 
-	public List<Player> geRunningbackList() throws IOException {
-		List<String> csvPlayers = parseToCSV(RB_PROJECTION_LINK);
+	public List<Player> geRunningbackList() throws IOException, URISyntaxException, ParseException {
+		List<String> csvPlayers = retriveData(RB_PROJECTION_LINK);
+		List<Player> players = new ArrayList<Player>();
 
-		return null;
+		for (String playerString : csvPlayers) {
+			String[] split = playerString.split("\t");
+
+			if (split.length == 10) {
+				Player tempPlayer = new Player();
+
+				// hand mapped values
+				tempPlayer.setName(split[0]);
+				tempPlayer.setTeam(split[1]);
+				tempPlayer.setRushingAttempts(prepareDouble(split[2]));
+				tempPlayer.setRushingYards(prepareDouble(split[3]));
+				tempPlayer.setRushingTouchdowns(prepareDouble(split[4]));
+				tempPlayer.setReceptions(prepareDouble(split[5]));
+				tempPlayer.setRecievingYards(prepareDouble(split[6]));
+				tempPlayer.setRecievingTouchdown(prepareDouble(split[7]));
+				tempPlayer.setFumbles(prepareDouble(split[8]));
+				tempPlayer.setPosition(Position.RB);
+
+				players.add(tempPlayer);
+			}
+		}
+
+		return players;
 	}
 
-	public List<Player> getWideRecieverList() throws IOException {
-		List<String> csvPlayers = parseToCSV(WR_PROJECTION_LINK);
+	public List<Player> getWideRecieverList() throws IOException, URISyntaxException, ParseException {
+		List<String> csvPlayers = retriveData(WR_PROJECTION_LINK);
+		List<Player> players = new ArrayList<Player>();
 
-		return null;
+		for (String playerString : csvPlayers) {
+			String[] split = playerString.split("\t");
+
+			if (split.length == 10) {
+				Player tempPlayer = new Player();
+
+				// hand mapped values
+				tempPlayer.setName(split[0]);
+				tempPlayer.setTeam(split[1]);
+				tempPlayer.setRushingAttempts(prepareDouble(split[2]));
+				tempPlayer.setRushingYards(prepareDouble(split[3]));
+				tempPlayer.setRushingTouchdowns(prepareDouble(split[4]));
+				tempPlayer.setReceptions(prepareDouble(split[5]));
+				tempPlayer.setRecievingYards(prepareDouble(split[6]));
+				tempPlayer.setRecievingTouchdown(prepareDouble(split[7]));
+				tempPlayer.setFumbles(prepareDouble(split[8]));
+				tempPlayer.setPosition(Position.WR);
+
+				players.add(tempPlayer);
+			}
+		}
+
+		return players;
 	}
 
-	public List<Player> getTightEndList() throws IOException {
-		List<String> csvPlayers = parseToCSV(TE_PROJECTION_LINK);
+	public List<Player> getTightEndList() throws IOException, URISyntaxException, ParseException {
+		List<String> csvPlayers = retriveData(TE_PROJECTION_LINK);
+		List<Player> players = new ArrayList<Player>();
 
-		return null;
+		for (String playerString : csvPlayers) {
+			String[] split = playerString.split("\t");
+
+			if (split.length == 10) {
+				Player tempPlayer = new Player();
+
+				// hand mapped values
+				tempPlayer.setName(split[0]);
+				tempPlayer.setTeam(split[1]);
+				tempPlayer.setRushingAttempts(prepareDouble(split[2]));
+				tempPlayer.setRushingYards(prepareDouble(split[3]));
+				tempPlayer.setRushingTouchdowns(prepareDouble(split[4]));
+				tempPlayer.setReceptions(prepareDouble(split[5]));
+				tempPlayer.setRecievingYards(prepareDouble(split[6]));
+				tempPlayer.setRecievingTouchdown(prepareDouble(split[7]));
+				tempPlayer.setFumbles(prepareDouble(split[8]));
+				tempPlayer.setPosition(Position.TE);
+
+				players.add(tempPlayer);
+			}
+		}
+
+		return players;
 	}
 
-	public List<Player> getKickerList() throws IOException {
-		List<String> csvPlayers = parseToCSV(K_PROJECTION_LINK);
+	public List<Player> getKickerList() throws IOException, URISyntaxException, ParseException {
+		List<String> csvPlayers = retriveData(K_PROJECTION_LINK);
+		List<Player> players = new ArrayList<Player>();
 
-		return null;
+		for (String playerString : csvPlayers) {
+			String[] split = playerString.split("\t");
+
+			if (split.length == 10) {
+				Player tempPlayer = new Player();
+
+				// hand mapped values
+				tempPlayer.setName(split[0]);
+				tempPlayer.setTeam(split[1]);
+				tempPlayer.setRushingAttempts(prepareDouble(split[2]));
+				tempPlayer.setRushingYards(prepareDouble(split[3]));
+				tempPlayer.setRushingTouchdowns(prepareDouble(split[4]));
+				tempPlayer.setReceptions(prepareDouble(split[5]));
+				tempPlayer.setRecievingYards(prepareDouble(split[6]));
+				tempPlayer.setRecievingTouchdown(prepareDouble(split[7]));
+				tempPlayer.setFumbles(prepareDouble(split[8]));
+				tempPlayer.setPosition(Position.K);
+
+				players.add(tempPlayer);
+			}
+		}
+
+		return players;
 	}
 
-	public List<Player> getDefenseList() throws IOException {
-		List<String> csvPlayers = parseToCSV(DEF_PROJECTION_LINK);
+	public List<Player> getDefenseList() throws IOException, URISyntaxException {
+		List<String> csvPlayers = retriveData(DEF_PROJECTION_LINK);
 
 		return null;
 	}
@@ -125,7 +214,15 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 		writeToFile = value;
 	}
 
-	public boolean getWriteToFile() {
+	public boolean isWriteToFile() {
 		return writeToFile;
+	}
+
+	private double prepareDouble(String input) throws ParseException {
+
+		NumberFormat format = NumberFormat.getInstance(Locale.US);
+		Number number = format.parse(input);
+
+		return number.doubleValue();
 	}
 }
