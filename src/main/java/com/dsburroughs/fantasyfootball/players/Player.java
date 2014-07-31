@@ -24,10 +24,6 @@ public class Player {
 	private Health health;
 	private Position position;
 
-	public enum Position {
-		QB, RB, WR, TE, K, DEF
-	}
-
 	public String getName() {
 		return name;
 	}
@@ -156,8 +152,4 @@ public class Player {
 		this.team = team;
 	}
 
-	
-
-	
-	
 }

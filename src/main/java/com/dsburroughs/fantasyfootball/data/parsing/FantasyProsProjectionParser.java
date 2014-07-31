@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Locale;
 
 import com.dsburroughs.fantasyfootball.players.Player;
-import com.dsburroughs.fantasyfootball.players.Player.Position;
+import com.dsburroughs.fantasyfootball.players.Position;
 
 public class FantasyProsProjectionParser implements IProjectionParser {
 
