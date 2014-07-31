@@ -8,7 +8,7 @@ public interface IProjectionParser {
 
 	public List<Player> getQuarterbackList() throws Exception;
 
-	public List<Player> geRunningbackList() throws Exception;
+	public List<Player> getRunningbackList() throws Exception;
 
 	public List<Player> getWideRecieverList() throws Exception;
 
@@ -17,4 +17,6 @@ public interface IProjectionParser {
 	public List<Player> getKickerList() throws Exception;
 
 	public List<Player> getDefenseList() throws Exception;
+	
+	public List<Player> getRoster() throws Exception;
 }

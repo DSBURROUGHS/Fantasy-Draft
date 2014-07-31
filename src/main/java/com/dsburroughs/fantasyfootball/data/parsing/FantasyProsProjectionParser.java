@@ -4,16 +4,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import au.com.bytecode.opencsv.CSVReader;
 
 import com.dsburroughs.fantasyfootball.players.Player;
 import com.dsburroughs.fantasyfootball.players.Player.Position;
@@ -34,7 +30,7 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 
 	}
 
-	private List<String> retriveData(String projectionLink) throws IOException, URISyntaxException {
+	private List<String> retriveData(String projectionLink) throws IOException {
 
 		List<String> playerData = new ArrayList<String>();
 
@@ -57,7 +53,7 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 
 	}
 
-	public List<Player> getQuarterbackList() throws ParseException, IOException, URISyntaxException {
+	public List<Player> getQuarterbackList() throws ParseException, IOException {
 		List<String> csvPlayers = retriveData(QB_PROJECTION_LINK);
 		List<Player> players = new ArrayList<Player>();
 
@@ -88,7 +84,7 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 		return players;
 	}
 
-	public List<Player> geRunningbackList() throws IOException, URISyntaxException, ParseException {
+	public List<Player> getRunningbackList() throws IOException, ParseException {
 		List<String> csvPlayers = retriveData(RB_PROJECTION_LINK);
 		List<Player> players = new ArrayList<Player>();
 
@@ -117,7 +113,7 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 		return players;
 	}
 
-	public List<Player> getWideRecieverList() throws IOException, URISyntaxException, ParseException {
+	public List<Player> getWideRecieverList() throws IOException, ParseException {
 		List<String> csvPlayers = retriveData(WR_PROJECTION_LINK);
 		List<Player> players = new ArrayList<Player>();
 
@@ -146,7 +142,7 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 		return players;
 	}
 
-	public List<Player> getTightEndList() throws IOException, URISyntaxException, ParseException {
+	public List<Player> getTightEndList() throws IOException, ParseException {
 		List<String> csvPlayers = retriveData(TE_PROJECTION_LINK);
 		List<Player> players = new ArrayList<Player>();
 
@@ -175,7 +171,7 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 		return players;
 	}
 
-	public List<Player> getKickerList() throws IOException, URISyntaxException, ParseException {
+	public List<Player> getKickerList() throws IOException, ParseException {
 		List<String> csvPlayers = retriveData(K_PROJECTION_LINK);
 		List<Player> players = new ArrayList<Player>();
 
@@ -204,10 +200,11 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 		return players;
 	}
 
-	public List<Player> getDefenseList() throws IOException, URISyntaxException {
-		List<String> csvPlayers = retriveData(DEF_PROJECTION_LINK);
+	public List<Player> getDefenseList() throws IOException {
+		// List<String> csvPlayers = retriveData(DEF_PROJECTION_LINK);
+		List<Player> players = new ArrayList<Player>();
 
-		return null;
+		return players;
 	}
 
 	public void setWriteToFile(boolean value) {
@@ -224,5 +221,18 @@ public class FantasyProsProjectionParser implements IProjectionParser {
 		Number number = format.parse(input);
 
 		return number.doubleValue();
+	}
+
+	public List<Player> getRoster() throws Exception {
+
+		List<Player> players = new ArrayList<>();
+		players.addAll(getQuarterbackList());
+		players.addAll(getRunningbackList());
+		players.addAll(getWideRecieverList());
+		players.addAll(getTightEndList());
+		players.addAll(getDefenseList());
+		players.addAll(getKickerList());
+
+		return players;
 	}
 }
